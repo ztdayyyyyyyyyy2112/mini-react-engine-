@@ -31,16 +31,21 @@ export function createElement(type, props, ...children) {
 /**
  * Chuyển đổi VNode thành DOM Node thực tế và gắn thuộc tính/sự kiện
  */
+/**
+ * Chuyển đổi VNode thành DOM Node thực tế và gắn thuộc tính/sự kiện
+ */
 export function renderToDOM(vnode) {
   if (!vnode) return null;
 
-  // 1. Tạo DOM Node tương ứng
-  const dom =
-    vnode.type === 'TEXT_ELEMENT'
-      ? document.createTextNode(vnode.props.nodeValue || '')
-      : document.createElement(vnode.type);
+  // 1. Xử lý Text Node riêng biệt
+  if (vnode.type === 'TEXT_ELEMENT') {
+    return document.createTextNode(vnode.props.nodeValue || '');
+  }
 
-  // 2. Gán các thuộc tính (Props) và Event Listeners
+  // 2. Tạo Element Node (main, header, h1, p, button, ...)
+  const dom = document.createElement(vnode.type);
+
+  // 3. Gán các thuộc tính (Props) và Event Listeners cho Element
   if (vnode.props) {
     Object.keys(vnode.props)
       .filter((key) => key !== 'children')
@@ -53,18 +58,20 @@ export function renderToDOM(vnode) {
           // Xử lý class attribute
           dom.className = vnode.props[name];
         } else {
-          // Xử lý các thuộc tính HTML khác (id, role, ...)
+          // Xử lý các thuộc tính HTML thông thường (id, role, ...)
           dom.setAttribute(name, vnode.props[name]);
         }
       });
 
-    // 3. Render đệ quy các node con và chèn vào DOM cha
-    vnode.props.children.forEach((childVNode) => {
-      const childDOM = renderToDOM(childVNode);
-      if (childDOM) {
-        dom.appendChild(childDOM);
-      }
-    });
+    // 4. Render đệ quy các node con và chèn vào DOM cha
+    if (Array.isArray(vnode.props.children)) {
+      vnode.props.children.forEach((childVNode) => {
+        const childDOM = renderToDOM(childVNode);
+        if (childDOM) {
+          dom.appendChild(childDOM);
+        }
+      });
+    }
   }
 
   return dom;
